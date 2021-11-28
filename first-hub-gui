@@ -6,11 +6,11 @@ local library = {}
 	local showsearch = true
 	
 	local Themes = {
-		BackgroundColor = Color3.fromRGB(40, 40, 40),
+		BackgroundColor = Color3.fromRGB(128, 128, 128),
 		TextColor = Color3.fromRGB(255, 255, 255),
-		AccentColor = Color3.fromRGB(30, 30, 30),
+		AccentColor = Color3.fromRGB(128, 128, 128),
 		GrayContrastColor = Color3.fromRGB(35, 35, 35),
-		DarkContrastColor = Color3.fromRGB(25, 25, 25),
+		DarkContrastColor = Color3.fromRGB(0, 0, 0),
 	}
 	
 	local ts = game:GetService("TweenService")
