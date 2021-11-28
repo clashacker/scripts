@@ -1250,7 +1250,7 @@ local ThemeSection = ThemeCategory.section("Themes")
 
 ThemeSection.colorpicker("Background Color", function(col)
 library:SetThemeColor("BackgroundColor", col, 0)
-end, Color3.fromRGB(40, 40, 40), false)
+end, Color3.fromRGB(128, 128, 128), false)
 
 ThemeSection.colorpicker("Text Color", function(col)
 library:SetThemeColor("TextColor", col, 0)
