@@ -1,0 +1,819 @@
+do
+	pcall(function()
+	    for i, v in pairs(game.CoreGui:GetChildren()) do
+	        if tostring(v) == "PT_UI_5" then
+	            v:remove()
+	        end
+	    end
+	end)
+end
+
+local start = tick()
+local version = "5"
+
+local gui = game:GetObjects("rbxassetid://5700738069")[1] --game:GetObjects("rbxassetid://1568387041")[1]
+gui.Parent = game.CoreGui
+gui = gui:WaitForChild("Main")
+gui.TextLabel.Text = gui.TextLabel.Text:gsub("vNumber", "v" .. tostring(version))
+
+local buttons = gui:WaitForChild("Buttons")
+local bar = buttons:WaitForChild("Underline")
+local menus = gui:WaitForChild("Menus")
+
+local inputService = game.UserInputService
+local players = game.Players
+local client = players.LocalPlayer
+local remote = workspace.Remote
+local rstep = game.RunService.RenderStepped
+
+--[[
+Made by Flooded0#1347
+]]--
+
+local settings = {
+	["InfAmmo"] = false,
+	["God"] = false,
+	["infvalus"] = false,
+	["nofall"] = true,
+	["C4"] = false,
+	["VS50"] = false,
+	["TM46"] = false
+}
+
+local colors = {
+	["Red"] = Color3.fromRGB(255,70,70),
+	["Yellow"] = Color3.fromRGB(255, 255, 0),
+	["Green"] = Color3.fromRGB(70, 255, 70),
+	["Blue"] = Color3.fromRGB(0, 171, 255),
+	["White"] = Color3.fromRGB(255, 255, 255),
+	["idk"] = Color3.fromRGB(119, 72, 140),
+	["Black"] = Color3.fromRGB(0, 0, 0),
+	["Cyan"] = Color3.fromRGB(0, 255, 255),
+	["Grey"] = Color3.fromRGB(116, 134, 156)
+}
+
+function setMessage(Msg, Time, Color)
+    if typeof(Color) ~= "Color3" then
+        Color = Color3.new(math.random(1, 255)/255, math.random(1, 255)/255, math.random(1, 255)/255)
+    end
+    M = game.Players.LocalPlayer.PlayerGui.MessageSystem.Messages
+    for i = 1, 4 do
+        Item = M["Message"..tostring(5-i)]
+        Item2 = M["Message"..tostring(6-i)]
+        Item2.Text = Item.Text
+        Item2.Removal.Value = Item.Removal.Value
+        Item2.TextColor3 = Item.TextColor3
+    end
+    M.Message1.Text = Msg
+    M.Message1.Removal.Value = Time
+    M.Message1.TextColor3 = Color
+end
+
+local function client_message(text, isGood)
+    local Color = "Green"
+    if isGood ~= true and typeof(isGood) ~= "string" then
+        Color = "Red"
+    elseif typeof(isGood) == "string" then
+        Color = isGood
+    end
+	setMessage(text, 30, colors[Color])
+end
+
+function getMatches(Par, Txt)
+	local Tab = {}
+	if Par:FindFirstChild(Txt) then
+		table.insert(Tab, Par[Txt])
+	end
+	Txt = string.lower(Txt)
+	for i, v in pairs(Par:GetChildren()) do
+		if string.lower(string.sub(tostring(v), 1, string.len(Txt))) == Txt then
+			table.insert(Tab, v)
+		end
+	end
+	return Tab
+end
+
+local warn = function(...)
+	local x = {...}
+	client_message(unpack(x), false)
+end
+
+R = game.Workspace.Remote
+local metaCall = getrawmetatable(getrenv().shared)
+local RemoteCall = debug.getupvalues(debug.getupvalues(metaCall.__index)[3])
+Serial = RemoteCall[6]
+GetKey = RemoteCall[7]
+function fireserver(Re, ...)
+Re = R[tostring(Re)]
+Re:FireServer(Serial({...}, GetKey()))
+end
+
+do
+	for k, v in next, game.Lighting.LootDrops:GetChildren() do
+		if not v.PrimaryPart then
+			v.PrimaryPart = v:FindFirstChild("Head", true)
+		end
+	end
+	pcall(function()
+		game.Lighting:FindFirstChild("ColorCorrection"):Destroy()
+	end)
+end
+
+for k, v in next, buttons:GetChildren() do
+	if v:IsA("TextButton") then
+		v.MouseButton1Click:connect(function()
+			for i, menu in next, menus:GetChildren() do
+				if menu.Name ~= v.Name then
+					menu.Visible = false
+				else
+					menu.Visible = true
+				end
+			end
+			
+			bar:TweenPosition(UDim2.new(0, v.Position.X.Offset, 0, 25), "Out", "Quad", 0.1, true)
+		end)
+	end
+end
+
+-- [Players] --
+
+local function getplayer(input)
+	if players:FindFirstChild(input) then
+		return players[input]
+	end
+	input = string.lower(tostring(input))
+	for i, v in pairs(players:GetChildren()) do
+		if string.sub(string.lower(tostring(v)), 1,  string.len(input)) == input then
+			return v
+		end
+	end
+	return
+end
+
+local function add(button, func, ...)
+	local arguments = {...}
+	button.MouseButton1Click:connect(function()
+		local a = {};
+		for k, v in next, arguments do
+			a[k] = v.Text
+		end
+		func(unpack(a))
+	end)
+end
+
+add(menus.Players.Buttons["Kill"], function(player)
+	if getplayer(player) then
+		fireserver("ChangeParent", getplayer(player).Character.Head)
+	else
+		warn("Player not found.")
+	end
+end, menus.Players["Player"])
+
+
+add(menus.Players.Buttons["Kick"], function(player)
+	if getplayer(player) then
+		R.AddClothing:FireServer("PermanentBan", getplayer(player), "", "", "")
+		repeat wait() until getplayer(player):FindFirstChild("PermanentBan")
+		fireserver("ChangeParent", getplayer(player), nil)
+	else
+		warn("Player not found.")
+	end
+end, menus.Players["Player"])
+
+
+add(menus.Players.Buttons["God"], function(player)
+	if getplayer(player) then
+		R.AddClothing:FireServer("DefenseMultiplier", getplayer(player).Character:FindFirstChild("Humanoid"), 0, "", "")
+	else
+		warn("Player not found.")
+	end
+end, menus.Players["Player"])
+
+
+add(menus.Players.Buttons["Ungod"], function(player)
+	if getplayer(player) then
+		for _, v in pairs(getplayer(player).Character:GetDescendants()) do
+			if v.Name == "DefenseMultiplier" then
+				fireserver("ChangeParent", v, nil)
+			end    
+		end
+	else
+		warn("Player not found.")
+	end
+end, menus.Players["Player"])
+
+
+local NameTab = {
+	["thisisbackpack"] = true,
+	["thisisaccessory"] = true,
+	["thisishat"] = true,
+	["thisishair"] = true,
+	["thisisarmor"] = true,
+}
+local SpecialTab = {}
+add(menus.Players.Buttons["Invis"], function(player)
+	local P = getplayer(player)
+	if P and P.Character ~= nil then
+		local char = P.Character
+		for i, v in pairs(char:GetDescendants()) do
+			if NameTab[tostring(v)] == true then
+				if SpecialTab[P] == nil then
+					SpecialTab[P] = {} 
+					SpecialTab[P]["Char"] = char
+				end
+				fireserver("ChangeParent", v.Parent, game.ReplicatedStorage)
+				table.insert(SpecialTab[P], v.Parent)
+			end
+		end
+		fireserver("VehichleLightsSet", char, "Plastic", 1)
+	elseif P.Character ~= nil then
+		warn("Player not found.")
+	else
+		warn("Player Character not found.")
+    end
+end, menus.Players["Player"])
+
+
+add(menus.Players.Buttons:FindFirstChild("Visible"), function(player)
+	local P = getplayer(player)
+	if P and P.Character ~= nil then
+		local char = P.Character
+		if SpecialTab[P] ~= nil and SpecialTab[P]["Char"] and SpecialTab[P]["Char"] == char then
+			for i = 1, #SpecialTab[P] do
+				fireserver("ChangeParent", SpecialTab[P][i], char)
+			end
+			fireserver("VehichleLightsSet", char, "Plastic", 0)
+			SpecialTab[P] = nil
+		end
+    elseif P.Character ~= nil then
+		warn("Player not found.")
+	else
+		warn("Player Character not found.")
+    end
+end, menus.Players["Player"])
+
+
+add(menus.Players.Buttons["Days"], function(player, value)
+	if getplayer(player) then
+		local stats = getplayer(player).playerstats
+		fireserver("ChangeValue", stats.Days, tonumber(value))
+	else
+		warn("Player not found")
+	end
+end, menus.Players["Player"], menus.Players["Value"])
+
+
+add(menus.Players.Buttons["PKills"], function(player, value)
+	if getplayer(player) then
+		local stats = getplayer(player).playerstats
+		fireserver("ChangeValue", stats.PlayerKill.Aggressive, tonumber(value))
+	else
+		warn("Player not found")
+	end
+end, menus.Players["Player"], menus.Players["Value"])
+
+
+add(menus.Players.Buttons["ZKills"], function(player, value)
+	if getplayer(player) then
+		local stats = getplayer(player).playerstats
+		fireserver("ChangeValue", stats.ZombieKill.Civilian, tonumber(value))
+	else
+		warn("Player not found")
+	end
+end, menus.Players["Player"], menus.Players["Value"])
+
+
+add(menus.Players.Buttons["Clear"], function(player)
+	if getplayer(player) then
+		local stats = getplayer(player).playerstats
+		for k, v in next, stats.slots:GetChildren() do
+            fireserver("ChangeValue", v, 0)
+                if v:FindFirstChild("ObjectID") then
+                fireserver("ChangeParent", v:FindFirstChild("ObjectID"))
+			end
+		end
+	else
+		warn("Player not found")
+	end
+end, menus.Players["Player"])
+
+
+add(menus.Players.Buttons["Goto"], function(player)
+	if getplayer(player) then
+		R.AddClothing:FireServer("driven", client.Character, "", "", "")
+		R.AddClothing:FireServer("IsBuildingMaterial", client.Character.HumanoidRootPart, "", "", "")
+		R.AddClothing:FireServer("SeatPoint", client.Character.Torso, "", "", "")
+		wait(.1)
+		R.HurtZombie:FireServer(client.Character)
+		R.ReplicatePart:FireServer(client.Character.HumanoidRootPart, getplayer(player).Character.Torso.CFrame + Vector3.new(math.random(-5, 5), 0.5, math.random(-5, 5)))
+		wait(1.1)
+		fireserver("ChangeParent", client.Character.HumanoidRootPart.IsBuildingMaterial, nil)
+		fireserver("ChangeParent", client.Character.Torso.SeatPoint, nil)
+		client.Character:WaitForChild("driven")
+		fireserver("ChangeParent", client.Character.driven, nil)
+	else
+		warn("Player not found")
+	end
+end, menus.Players["Player"])
+
+
+add(menus.Players.Buttons["Bring"], function(player)
+	if getplayer(player) then
+		R.AddClothing:FireServer("driven", getplayer(player).Character, "", "", "")
+		R.AddClothing:FireServer("IsBuildingMaterial", getplayer(player).Character.HumanoidRootPart, "", "", "")
+		R.AddClothing:FireServer("SeatPoint", getplayer(player).Character.Torso, "", "", "")
+		wait(.1)
+		R.HurtZombie:FireServer(getplayer(player).Character)
+		R.ReplicatePart:FireServer(getplayer(player).Character.HumanoidRootPart, client.Character.Torso.CFrame + Vector3.new(math.random(-5, 5), 0, math.random(-5, 5)))
+		wait(1.1)
+		fireserver("ChangeParent", getplayer(player).Character.HumanoidRootPart.IsBuildingMaterial, nil)
+		fireserver("ChangeParent", getplayer(player).Character.Torso.SeatPoint, nil)
+		getplayer(player).Character:WaitForChild("driven")
+		fireserver("ChangeParent", getplayer(player).Character.driven, nil)
+	else
+		warn("Player not found")
+	end
+end, menus.Players["Player"])
+
+menus.Players["Player"].FocusLost:connect(function(e)
+	if e then
+		local p = getplayer(menus.Players["Player"].Text)
+		if p then
+			menus.Players["Player"].Text = p.Name
+		end
+	end
+end)
+
+-- [Players] -- 
+
+-- [Spawning] --
+
+local spawning = menus.Spawning
+
+function GetPart(Model)
+    local P = nil
+    for i, v in pairs(Model:GetDescendants()) do
+        if v:IsA("BasePart") and (P == nil or tostring(v) == "Head" or tostring(v) == "Driver") then
+            P = v
+        end
+    end
+    return P
+end
+
+local AA = 0
+MaxAmount = 1000
+TimeToWait = 1.5
+function Count()
+	AA = AA + 1
+	if AA >= MaxAmount then
+		wait(TimeToWait)
+		AA = 0
+	end
+end
+
+local SelectedItem = nil
+local Mats = game.Lighting.Materials
+local Loot = game.Lighting.LootDrops
+SpawnedItems = {}
+function SpawnItem(SelectedPlayer, SelectedItem, Par, OF)
+if SelectedPlayer == nil or SelectedItem == nil then
+return
+end
+if SP == nil then
+Count()
+end
+if SpawnedItems[SelectedItem] == nil then
+SpawnedItems[SelectedItem] = {true}
+else
+table.insert(SpawnedItems[SelectedItem], true)
+end
+if SelectedItem.Parent ~= Mats then
+fireserver("ChangeParent", Par:WaitForChild(tostring(SelectedItem)), Mats)
+end
+local ItemI = Mats:WaitForChild(tostring(SelectedItem))
+if ItemI.PrimaryPart == nil then
+    ItemI.PrimaryPart = GetPart(ItemI)
+end
+pcall(function() R["PlaceMaterial"]:FireServer(Mats:WaitForChild(tostring(SelectedItem)).Name, SelectedPlayer.Character.Torso.Position-ItemI.PrimaryPart.Position-OF) end)
+spawn(function()
+wait(2)
+table.remove(SpawnedItems[SelectedItem], 1)
+if #SpawnedItems[SelectedItem] < 1 then
+fireserver("ChangeParent", Mats:WaitForChild(tostring(SelectedItem)), Par)
+end
+end)
+end
+
+add(spawning.Background.Spawn, function(player, item, amount)
+	local new_amount = tonumber(amount)
+	local final = math.clamp(new_amount, 1, 15)
+		for i = 1, final do
+			SpawnItem(getplayer(player), SelectedItem, Loot, Vector3.new(math.random(-2, 2), 2.5, math.random(-2, 2)))
+		end
+end, spawning.Background.Type.Box, spawning.Background.ItemType.Box, spawning.Background.AmountType.Box)
+
+
+spawning.LootBox:GetPropertyChangedSignal("Text"):connect(function()
+	local list = getMatches(game.Lighting.LootDrops, spawning.LootBox.Text)
+	spawning.LootList:ClearAllChildren()
+	
+	for k, v in next, list do
+		local s = Instance.new("TextButton")
+		s.Name = v.Name
+		s.Text = v.Name
+		
+		s.Font = Enum.Font.SourceSansBold
+		s.Size = UDim2.new(0, spawning.LootList.Size.X.Offset, 0, 35)
+		s.BackgroundColor3 = Color3.fromRGB(49, 49, 49)
+		s.TextColor3 = Color3.fromRGB(255, 255, 255)
+		s.BorderSizePixel = 0
+		s.TextScaled = true
+		s.ZIndex = 2
+
+		s.Position = UDim2.new(0, 0, 0, (35 * k) - 35)
+		s.Parent = spawning.LootList
+		s.MouseButton1Click:connect(function()
+			spawning.Background.ItemType.Box.Text = s.Name
+			SelectedItem = v
+		end)
+	end
+	
+	spawning.LootList.CanvasSize = UDim2.new(0, 0, 0, (35 * #list))
+end)
+
+
+spawning.Background.Type.Box.FocusLost:connect(function(e)
+	if e then
+		local plr = getplayer(spawning.Background.Type.Box.Text)
+		if plr then
+			spawning.Background.Type.Box["Text"] = plr.Name
+		end
+	end
+end)
+
+-- [[ Local Tab ]] --
+
+local ltab = menus.Local.Buttons
+add(ltab.InfAmmo, function()
+	for _, v in next, game.Players.LocalPlayer.playerstats.slots:GetChildren() do
+		if v:FindFirstChild("ObjectID") then
+			if v:FindFirstChild("ObjectID"):FindFirstChild("Clip") then 
+				fireserver("ChangeValue", v.ObjectID.Clip.MaxClip, 99999999999999)
+				fireserver("ChangeValue", v.ObjectID.Clip, getrenv()._G.Obfuscate(99999999999999))
+				end
+			end
+	    end
+	client_message("Infinite ammo enabled!", true)
+end)
+
+
+add(ltab.Recoil, function()
+	for _, v in next, game.Players.LocalPlayer.Backpack:GetChildren() do
+		if v:FindFirstChild("Shooter", true) then
+			fireserver("ChangeValue", v.Stats.Recoil, getrenv()._G.Obfuscate(1))
+		end
+	end
+	client_message("No recoil enabled!", true)
+end)
+
+
+add(ltab.Bring, function()
+	for k, v in next, workspace:GetChildren() do
+		if v.Name == "Corpse" then
+			v:MoveTo(client.Character.Torso.Position + Vector3.new(math.random(-15, 15), 0.5, math.random(-15, 15)))
+		end
+	end
+end)
+
+
+add(menus.Local.Spectate, function(player)
+	workspace.CurrentCamera.CameraSubject = getplayer(player).Character.Humanoid
+end, menus.Local.player)
+
+add(menus.Local.RView, function()
+	workspace.CurrentCamera.CameraSubject = client.Character.Humanoid
+end)
+
+
+menus.Local.player.FocusLost:connect(function(e)
+	if e then
+		local p = getplayer(menus.Local.player.Text)
+		if p then
+			menus.Local.player.Text = p.Name
+		end
+	end
+end)
+
+-- [[ Vehicle Tab ]] --
+
+local vehicle = menus.Vehicles
+local selectedVehicle = nil
+local vehicles = workspace:WaitForChild("Vehicles")
+local vehicle_list = vehicle.VList
+local selected_vehicles = {}
+
+local function update()
+	vehicle_list:ClearAllChildren()
+	
+	for k, v in next, vehicles:GetChildren() do
+		local s = Instance.new("TextButton")
+		s.Name = v.Name
+		s.Text = v.Name
+		
+		selected_vehicles[s] = v
+		
+		s.Position = UDim2.new(0, 0, 0, (25 * k) - 25)
+		s.Size = UDim2.new(0, vehicle_list.Size.X.Offset, 0, 25)
+		s.BackgroundColor3 = Color3.fromRGB(84, 84, 84)
+		s.BorderSizePixel = 0
+		s.TextColor3 = Color3.fromRGB(255, 255, 255)
+		s.Font = Enum.Font.SourceSansBold
+		s.TextSize = 20
+		s.ZIndex = 2
+
+		s.Parent = vehicle_list
+		s.MouseButton1Click:connect(function()
+			vehicle.VehicleName.Text = s.Text
+			selectedVehicle = selected_vehicles[s]
+		end)
+		
+		v.Changed:connect(function()
+			s.Text = v.Name
+			vehicle.VehicleName.Text = v.Name
+		end)
+	end
+	vehicle_list.CanvasSize = UDim2.new(0, 0, 0, (25 * #vehicles:GetChildren()))
+end
+
+vehicles.ChildAdded:connect(update)
+
+vehicles.ChildRemoved:connect(function(c)
+	if selectedVehicle == c then
+		selectedVehicle = nil
+		vehicle.VehicleName.Text = "NO VEHICLE SELECTED"
+	end
+end)
+
+update()
+
+
+add(vehicle.GodVehicle, function()
+	local vehicle = selectedVehicle
+	if vehicle then
+		for k, v in next, vehicle.Wheels:GetChildren() do
+			fireserver("WheelVisibleSet", v, "Armored")
+	    end
+		fireserver("WindowArmorSet", vehicle.Essentials.Details.Windows, "Ballistic")
+		fireserver("HullArmorSet", vehicle.Essentials.Color.ArmorSkirt, vehicle.Essentials.Color)
+		local stats = {
+			"Armor",
+			"Tank",
+			"Hull",
+			"Engine",
+			"Fuel",
+		}
+		for k, v in next, stats do
+			fireserver("ChangeValue", vehicle.Stats[v].Max, 9999999999)
+			fireserver("ChangeValue", vehicle.Stats[v], 9999999999)
+		end
+	else
+		client_message("No vehicle is selected!", false)
+	end
+end)
+
+
+add(vehicle.Bring, function()
+	local vehicle = selectedVehicle
+	if vehicle then
+		spawn(function()
+			if not vehicle.PrimaryPart then
+				vehicle.PrimaryPart = vehicle.Essentials.Base
+			end
+		end)
+		R.AddClothing:FireServer("IsBuildingMaterial", vehicle.PrimaryPart, "", "", "")
+		repeat
+			wait()
+		until vehicle.PrimaryPart:FindFirstChild("IsBuildingMaterial")
+		R.ReplicatePart:FireServer(vehicle.PrimaryPart, client.Character.HumanoidRootPart.CFrame + Vector3.new(10,4, 0))
+	else
+		client_message("No vehicle is selected!", false)
+	end
+end)
+
+
+add(vehicle.Goto, function()
+	local vehicle = selectedVehicle
+	if vehicle then
+		spawn(function()
+			if not vehicle.PrimaryPart then
+				vehicle.PrimaryPart = vehicle.Essentials.Base
+			end
+		end)
+		R.AddClothing:FireServer("driven", client.Character, "", "", "")
+		R.AddClothing:FireServer("IsBuildingMaterial", client.Character.HumanoidRootPart, "", "", "")
+		R.AddClothing:FireServer("SeatPoint", client.Character.Torso, "", "", "")
+		wait(.1)
+		R.HurtZombie:FireServer(client.Character)
+		R.ReplicatePart:FireServer(client.Character.HumanoidRootPart, vehicle.Essentials.Base.CFrame + Vector3.new(0, 10, 0))
+		wait(1.1)
+		fireserver("ChangeParent", client.Character.HumanoidRootPart.IsBuildingMaterial, nil)
+		fireserver("ChangeParent", client.Character.Torso.SeatPoint, nil)
+		client.Character:WaitForChild("driven")
+		fireserver("ChangeParent", client.Character.driven, nil)
+	else
+		client_message("No vehicle is selected!", false)
+	end
+end)
+
+
+add(vehicle.Explode, function()
+	local vehicle = selectedVehicle
+	if vehicle then
+		if vehicle.Name ~= ("Bicycle" or "Motorcycle" or "Motorside") then
+			fireserver("ChangeValue", vehicle.Stats.Engine, 0)
+			wait(150)
+			fireserver("ChangeParent", vehicle, nil)
+		end
+	else
+		client_message("No vehicle is selected!", false)
+	end
+end)
+
+
+add(vehicle.SelectVeh, function()
+	local point = client.Character.Torso:FindFirstChild("SeatPoint")
+	if point then
+		local weld = point.Value
+		if weld then
+			local part = weld.Parent.Parent.Parent
+			
+			vehicle.VehicleName.Text = part.Name
+			selectedVehicle = part
+		end
+	else
+		warn("You are not in a vehicle!")
+	end
+end)
+
+
+spawn(function()
+	for k, v in next, {vehicle.SpeedLabel.Box} do
+		v:GetPropertyChangedSignal("Text"):connect(function()
+			v.Text = v.Text:gsub("%a%p", "")
+		end)
+	end
+end)
+
+
+add(vehicle.SetSpeed, function(speed)
+	local vehicle = selectedVehicle
+	for k, v in next, {vehicle.Stats.MaxSpeed, vehicle.Stats.MaxSpeed.Offroad} do
+		fireserver("ChangeValue", v, tonumber(speed))
+	end
+end, vehicle.SpeedLabel.Box)
+
+-- Server stuff
+
+local server_tab = menus:WaitForChild("Server")
+local clothes = server_tab["Clothes"]
+local destructive = server_tab["Destructive"]
+local explosives = server_tab:WaitForChild("Explosives") 
+
+function check(thing, remote, id)
+	coroutine.wrap(function()
+		fireserver("ChangeValue", thing, id)
+		R:FireServer()
+	end)()
+end
+
+
+add(clothes:WaitForChild("ChangeShirt"), function(id)
+	check(client.playerstats.character.shirt.ObjectID.Shirt, R.CheckShirt, id)
+
+	for k, v in next, game:GetService("Lighting"):WaitForChild("PlayerVests"):GetChildren() do
+		if client.Character:FindFirstChild(v.Name) then
+			fireserver("Destruct", client.Character:FindFirstChild(v.Name))
+		end
+	end
+end, clothes["S. Id"])
+
+
+add(clothes:WaitForChild("ChangePants"), function(id)
+	check(client.playerstats.character.pants.ObjectID.Pants, R.CheckPants, id)
+
+	for k, v in next, game:GetService("Lighting"):WaitForChild("PlayerVests"):GetChildren() do
+		if client.Character:FindFirstChild(v.Name) then
+			fireserver("Destruct", client.Character:FindFirstChild(v.Name))
+		end
+	end
+end, clothes["P. Id"])
+
+add(destructive.KickAll, function()
+	for k, v in next, game.Players:GetPlayers() do
+		if v ~= client then
+			R.AddClothing:FireServer("PermanentBan", v, "", "", "")
+			fireserver("ChangeParent", v, nil)
+		end
+	end
+end)
+
+
+add(destructive.KillAll, function()
+	for k, v in next, game.Players:GetPlayers() do
+		if v ~= client then
+			pcall(function()
+				fireserver("ChangeParent", v.Character.Head)
+			end)
+		end
+	end
+end)
+
+
+add(destructive.DetonateAll, function()
+	for k, v in next, workspace:GetChildren() do
+		local isMine = v.Name == "VS50Placed" or v.Name == "TM46Placed"
+		local isC4 = v.Name == "C4Placed"
+
+		if isMine then
+			fireserver("ChangeValue", v.Active, true)
+		elseif isC4 then
+			R.Detonate:FireServer(v)
+		end
+	end
+end)
+
+
+add(destructive.DelExplosives, function()
+	local Explosives = {
+		["C4Placed"] = true,
+		["VS50Placed"] = true,
+		["TM46Placed"] = true
+	}
+	for _, v in pairs(game.Workspace:GetChildren()) do
+		if Explosives[v.Name] then
+			fireserver("ChangeParent", v, nil)
+		end
+	end
+end)
+
+
+for name, button in next, {
+	["VS50"] = explosives.VS50Walk,
+	["C4"] = explosives.C4Walk,
+	["TM46"] = explosives.TM46Walk
+} do
+	add(button, function()
+		settings[name] = not settings[name]
+		local text = (name .. " Walk: " .. (settings[name] and "On" or "Off"))
+		button:FindFirstChild("Text").Text = text
+	end)
+end
+
+spawn(function()
+	while wait() do
+		if settings.infvalus then
+			for _, stat in next, {"Hunger", "Thirst"} do
+				fireserver("ChangeValue", client.playerstats[stat], math.huge)
+			end
+		end
+		if client.Character then
+			if settings.God then
+				for k, v in next, {"Humanoid"} do
+					R.AddClothing:FireServer("DefenseMultiplier", client.Character:FindFirstChild("Humanoid"), 0, "", "")
+				end
+			end
+			if settings.nofall and client.PlayerGui.HitEqualsYouDie:FindFirstChild("JumpLimiter") then
+				client.PlayerGui.HitEqualsYouDie.JumpLimiter:remove()
+			end
+			local C4 = game.Lighting.Materials.C4Placed
+			local VS50 = game.Lighting.Materials.VS50Placed
+			local TM46 = game.Lighting.Materials.TM46Placed
+
+			if settings.C4 then
+				R.PlaceC4:FireServer(C4, client.Character.Torso.Position - Vector3.new(0, -2.9, 0), true)
+			end
+
+			if settings.VS50 then
+			    R.PlaceC4:FireServer(VS50, client.Character.Torso.Position - Vector3.new(0, -2.9, 0), true)
+			end
+
+			if settings.TM46 then		
+				R.PlaceC4:FireServer(TM46, client.Character.Torso.Position - Vector3.new(0, -2.9, 0), true)
+			end
+		end
+	end
+end)
+
+local UIS = game.UserInputService
+local toggle = false
+
+UIS.InputBegan:Connect(function(input, gP)
+	if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.P then
+		gui.Parent.Enabled = toggle
+		toggle = not toggle
+	end
+end)
+
+spawn(function()
+	client_message("Hello, " .. client.Name .. "! Welcome to The New PT Tools " .. tostring(version) .. "!", true)
+end)
